@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h1>Apply!</h1>
+	{% if ERRORS %}
+		{% for ERROR in ERRORS %} 
+		<h3> {{ ERROR }} </h3>
+		{% endfor %}
+	{% endif %}
+	<form method="POST" class="post-form">{% csrf_token %}
+		{{ AppForm.as_p }}
+		<button type="submit" name="submit" value="submit" class="btn btn-primary">Submit</button>
+	</form>
+{% endblock %}
+
