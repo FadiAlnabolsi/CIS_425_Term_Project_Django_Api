@@ -1,9 +1,13 @@
 from django.contrib.auth.models import User
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, render_to_response
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.http import HttpResponseRedirect
+from django.contrib import auth
+from django.core.context_processors import csrf
+from django.db.models import Q
 
-from snippets.models import Snippet
+from snippets.models import Snippet, Registrations, ScholarshipAdmin
 from snippets.serializers import SnippetSerializer, UserSerializer, RegistrationSerializer
 from snippets.permissions import IsOwnerOrReadOnly, IsScholarshipAdmin
 from snippets.models import Registrations
@@ -20,6 +24,7 @@ from rest_framework import viewsets
 
 import datetime
 import requests
+import json
 
 def contains_digits(s):
     return any(char.isdigit() for char in s)
@@ -41,7 +46,6 @@ def Application(request):
 
 
         if AppForm.is_valid():
-            print('here')
             if (contains_digits(AppForm.data['firstName'])):
                 AllErrors.append('Invalid First Name')
                 validForm = False
@@ -71,6 +75,17 @@ def Application(request):
                 AllErrors.append('Invalid Number of Credits')
                 validForm = False
 
+            if(AppForm.data['cumGpa'] < 3.2):
+                AllErrors.append('GPA is too low')
+                validForm = False
+
+            if(AppForm.data['numCredits'] < 12):
+                AllErrors.append('Number of credits is too low')
+                validForm = False
+
+            if(AppForm.data['dob_year'] < 1992):
+                AllErrors.append('Too Old')
+                validForm = False
             try:
                 Registrations.objects.get(studentNumber=AppForm.data['studentNumber'])
                 AllErrors = []
@@ -99,13 +114,50 @@ def Application(request):
 
     return render(request, 'Application.html', {'AppForm':AppForm})
 
+
+def AdminLogin(request):
+    c = {}
+    c.update(csrf(request))
+    return render_to_response('AdminLogin.html', c)
+
+def AdminAuthorization(request):
+    username = request.POST.get('username', '')
+    password = request.POST.get('password', '')
+    user = auth.authenticate(username=username, password=password)
+
+    if user is not None:
+
+        isAdmin = ScholarshipAdmin.objects.get(user=user)
+        if (isAdmin.Admin == True):
+            return HttpResponseRedirect('/AdminPortal')
+    else:
+        return render_to_response("invalid.html")
+
 def AdminPortal(request):
-    return render(request, 'AdminPortal.html')
+    if (request.user.is_anonymous()):
+        return HttpResponseRedirect('/')
 
+    isAdmin = ScholarshipAdmin.objects.get(user=request.user)
 
+    url = 'http://localhost:8000/api/registrations/'
+    r = requests.get(url, auth=('ScholarshipAdmin', 'pass123'))
+    applicants = r.json() 
 
+    if (isAdmin.Admin == True):                    
+        return render(request, 'AdminPortal.html', {'applicants':applicants})
+    else:
+        return HttpResponseRedirect('/')
 
+def SelectWinner(request, post_id):
+    if (request.user.is_anonymous()):
+        return HttpResponseRedirect('/')
 
+    winner = Registrations.objects.get(studentNumber = post_id)
+    winner.winner = True
+
+    return redirect('snippets.views.AdminPortal')
+
+    
 
 
 ############ API #################
@@ -146,17 +198,70 @@ class RegistrationListViewSet(viewsets.ModelViewSet):
     serializer_class = RegistrationSerializer
     permission_classes = (IsScholarshipAdmin,)
 
-# class RegistrationSingleViewSet(viewsets.ReadOnlyModelViewSet):
-#     """
-#     This viewset automatically provides `list` and `detail` actions for a single Registration
-#     """
-#     print('2')
-#     queryset = Registrations.objects.all()
-#     print(queryset)
-#     serializer_class = RegistrationSerializer
-#     print('2.2')
-#     permission_classes = (IsScholarshipAdmin)
-#     print('2.3')
+
+class WinnerSelection(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
+
+    Additionally we also provide an extra `highlight` action.
+    """
+    matchFound = False
+    #checking to see if there is a single person with highest gpa
+    queryset = Registrations.objects.all().filter(winner=True)
+    if (queryset.count() == 1):
+        matchFound = True
+
+
+    if(matchFound == False):
+        queryset = Registrations.objects.all().order_by('-cumGpa')
+        if (queryset.count() == 1):
+            queryset = Registrations.objects.all()
+            matchFound = True
+
+        #check for highest cum gpa
+        if (queryset[0].cumGpa == queryset[1].cumGpa):
+            matchFound = False
+        else:
+            queryset = queryset.filter(studentNumber = queryset[0].studentNumber)
+            matchFound = True
+
+    #check for highest current gpa
+    if(matchFound == False):
+        queryset = Registrations.objects.all().order_by('-cumGpa')
+        if(queryset[0].currGpa == queryset[1].currGpa):
+            matchFound = False
+        else:
+            queryset = queryset.filter(studentNumber = queryset[0].studentNumber)
+            matchFound = True
+
+    #checking for only 1 Junior
+    if(matchFound == False):
+        queryset = Registrations.objects.filter(collegeStatus = 'J')
+        if(queryset.count() == 1):
+            matchFound = True
+        else:
+            matchFound = False
+            
+    #checking for only 1 female
+    if(matchFound == False):
+        queryset = Registrations.objects.filter(gender = 'F')
+
+        if(queryset.count() == 1):
+            matchFound = True
+        else:
+            matchFound = False
+
+    #2 youngest students
+    if(matchFound == False):
+        queryset = Registrations.objects.all().order_by('-dob_year')
+        queryset = queryset.filter(dob_year = queryset[0].dob_year)
+        queryset = queryset.order_by('-dob_month')
+        queryset = queryset.filter(Q(studentNumber = queryset[0].studentNumber) | Q(studentNumber = queryset[1].studentNumber))  
+        matchFound = True
+
+    serializer_class = RegistrationSerializer
+    permission_classes = (IsScholarshipAdmin,)
 
 
 

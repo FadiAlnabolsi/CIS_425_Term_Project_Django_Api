@@ -9,6 +9,7 @@ router = DefaultRouter()
 router.register(r'snippets', views.SnippetViewSet)
 router.register(r'users', views.UserViewSet)
 router.register(r'registrations', views.RegistrationListViewSet)
+router.register(r'winner', views.WinnerSelection)
 
 # The API URLs are now determined automatically by the router.
 # Additionally, we include the login URLs for the browsable API.
@@ -18,6 +19,9 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
 
     url(r'^$', views.Homepage ),
-    url(r'^Application$', views.Application ),
-    url(r'^AdminPortal$', views.AdminPortal ),
+    url(r'^Application$', views.Application),
+    url(r'^AdminPortal$', views.AdminPortal),
+    url(r'^AdminLogin/auth/$', views.AdminAuthorization),
+    url(r'^AdminLogin$', views.AdminLogin),
+    url(r'^SelectWinner/(?P<post_id>[0-9]+$)', views.SelectWinner),
 ]

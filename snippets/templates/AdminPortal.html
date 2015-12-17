@@ -1,6 +1,99 @@
 {% extends "base.html" %}
 
+
 {% block content %}
 	<h1>Admin Portal!</h1>
-{% endblock %}
 
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js"></script>
+
+
+<script>
+//getting all the applicants
+var jqxhr = $.getJSON( "http://localhost:8000/api/registrations/", function() {
+  console.log( "success" );
+})
+  .done(function(data) {
+  	console.log(data)
+  	//console.log(data.results[0].firstName)
+  	var items = [];
+  	 items.push('<h2> Applications </h2>')
+
+  	for (var i in data.results){
+  		items.push('<table style="width:100%">')
+  		items.push('<tr>')
+  		items.push('<td>' + data.results[i].firstName + '</td>')
+  		items.push('<td>' + data.results[i].lastName  + '</td>')
+  		items.push('<td>' + data.results[i].studentNumber + '</td>')
+  		items.push('<td>' + data.results[i].emailaddress + '</td>')
+  		items.push('<td>' + data.results[i].phoneNumber + '</td>')
+  		items.push('<td>' + data.results[i].gender + '</td>')
+  		items.push('<td>' + data.results[i].collegeStatus + '</td>')
+  		items.push('<td>' + data.results[i].cumGpa + '</td>')
+  		items.push('<td>' + data.results[i].currGpa + '</td>')
+  		items.push('<td>' + data.results[i].numCredits + '</td>')
+  		console.log(items)
+  $( "<ul/>", {
+    "class": "my-new-list",
+    html: items.join( "" )
+  }).appendTo( "body" );
+  items = [];
+  	}
+  })
+  .fail(function() {
+    console.log( "error" );
+  })
+  .always(function() {
+    console.log( "complete" );
+  });
+
+//Getting the prediected winner
+var jqxhr = $.getJSON( "http://localhost:8000/api/winner/", function() {
+  console.log( "success" );
+})
+  .done(function(data) {
+  	//console.log(data.results[0].firstName)
+  	var items = [];
+  	 items.push('<h2> Predicted Winner </h2>')
+  	    
+  	for (var i in data.results){
+  		if(i == 2){
+  			items.push('<h3> TIE! Must vote <h3>')
+  		}
+  		if (data.results[i].winner == False){
+  		items.push('<a href="/SelectWinner/' + data.results[i].studentNumber + '"> Select ' + data.results[i].firstName + ' ' + data.results[i].lastName + ' as the winner</a>')
+  		} else {
+  		items.push('<h2>' + data.results[i].firstName + ' ' + data.results[i].lastName + ' is the winner</h2>')
+  		}
+  		items.push('<table style="width:100%">')
+  		items.push('<tr>')
+  		items.push('<td>' + data.results[i].firstName + '</td>')
+  		items.push('<td>' + data.results[i].lastName  + '</td>')
+  		items.push('<td>' + data.results[i].studentNumber + '</td>')
+  		items.push('<td>' + data.results[i].emailaddress + '</td>')
+  		items.push('<td>' + data.results[i].phoneNumber + '</td>')
+  		items.push('<td>' + data.results[i].gender + '</td>')
+  		items.push('<td>' + data.results[i].collegeStatus + '</td>')
+  		items.push('<td>' + data.results[i].cumGpa + '</td>')
+  		items.push('<td>' + data.results[i].currGpa + '</td>')
+  		items.push('<td>' + data.results[i].numCredits + '</td>')
+
+
+  		console.log(items)
+  $( "<ul/>", {
+    "class": "my-new-list",
+    html: items.join( "" )
+  }).appendTo( "body" );
+  items = [];
+  	}
+  })
+  .fail(function() {
+    console.log( "error" );
+  })
+  .always(function() {
+    console.log( "complete" );
+  });
+
+</script>
+
+{% endblock %}

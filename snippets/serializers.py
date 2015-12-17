@@ -24,4 +24,4 @@ class RegistrationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Registrations
         fields = ('firstName', 'lastName', 'studentNumber', 'emailaddress', 'phoneNumber', 'dob_day', 'dob_month', 'dob_year', 
-                  'registration_day', 'registration_month', 'registration_year', 'gender', 'collegeStatus', 'cumGpa', 'numCredits') 
+                  'registration_day', 'registration_month', 'registration_year', 'gender', 'collegeStatus', 'cumGpa', 'currGpa', 'numCredits') 

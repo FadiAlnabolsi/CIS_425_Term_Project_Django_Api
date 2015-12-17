@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Max
 
 from django.contrib.auth.models import User
 
@@ -31,8 +32,10 @@ class Registrations(models.Model):
 	gender = models.CharField(verbose_name = 'Gender', max_length=1)
 	collegeStatus = models.CharField(verbose_name = 'College Status', max_length=2)
 	cumGpa = models.CharField(verbose_name = 'Cumulative GPA', max_length=4)
+	currGpa = models.CharField(verbose_name = 'Semester GPA', max_length=4)
 	numCredits = models.CharField(verbose_name = 'Number of Credits', max_length=3)
-
+	winner = models.BooleanField(default=False)
+	
 	def __str__(self):
 		return self.firstName + ' ' + self.lastName
 

@@ -50,5 +50,5 @@ class RegistrationForm(forms.ModelForm):
 			      'dob_month', 'dob_year', 
                   'registration_day', 'registration_month',
                   'registration_year', 'gender',
-                  'collegeStatus', 'cumGpa', 
+                  'collegeStatus', 'cumGpa', 'currGpa',
                   'numCredits') 
